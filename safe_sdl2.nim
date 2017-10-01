@@ -5,8 +5,8 @@ type
 
 proc safeGetError*: cstring not nil {.inline.} =
   let ret = getError()
-  if ret.isNil:
-    doAssert false
+  if ret.isNil or ret == "":
+    raise SDLException.newException("Unable to get an SDL2 error!")
   else:
     return ret
 
