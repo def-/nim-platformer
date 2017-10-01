@@ -110,7 +110,7 @@ proc renderText(renderer: RendererPtr, font: FontPtr, text: string,
 
   surface.safeFreeSurface()
 
-proc renderText(game: Game, text: string, x, y: cint, color: Color,
+proc renderText(game: Game not nil, text: string, x, y: cint, color: Color,
                 tc: TextCache) =
   let passes = [(color: color(0, 0, 0, 64), outline: 2.cint),
                 (color: color, outline: 0.cint)]
@@ -130,7 +130,7 @@ proc renderText(game: Game, text: string, x, y: cint, color: Color,
     game.renderer.safeCopyEx(tc.cache[i].texture, source, dest,
                              angle = 0.0, center = nil)
 
-template renderTextCached(game: Game, text: string, x, y: cint, color: Color) =
+template renderTextCached(game: Game not nil, text: string, x, y: cint, color: Color) =
   block:
     var tc {.global.} = newTextCache()
     game.renderText(text, x, y, color, tc)
@@ -220,7 +220,7 @@ proc toInput(key: Scancode): Input =
   of SDL_SCANCODE_Q: Input.quit
   else: Input.none
 
-proc handleInput(game: Game) =
+proc handleInput(game: Game not nil) =
   var event = defaultEvent
   while safePollEvent(event):
     case event.kind
@@ -242,7 +242,7 @@ proc formatTimeExact(ticks: int): string =
   let cents = (ticks mod 50) * 2
   interp"${formatTime(ticks)}:${cents:02}"
 
-proc render(game: Game, tick: int) =
+proc render(game: Game not nil, tick: int) =
   # Draw over all drawings of the last frame with the default color
   game.renderer.safeClear()
   # Actual drawing here
@@ -329,7 +329,7 @@ proc moveBox(map: Map, pos: var Point2d, vel: var Vector2d,
 
     pos = newPos
 
-proc physics(game: Game) =
+proc physics(game: Game not nil) =
   if game.inputs[Input.restart]:
     game.player.restartPlayer()
 
@@ -351,7 +351,7 @@ proc physics(game: Game) =
 
   game.map.moveBox(game.player.pos, game.player.vel, playerSize)
 
-proc moveCamera(game: Game) =
+proc moveCamera(game: Game not nil) =
   const halfWin = float(windowSize.x div 2)
   when defined(fluidCamera):
     let dist = game.camera.x - game.player.pos.x + halfWin
@@ -364,7 +364,7 @@ proc moveCamera(game: Game) =
   else:
     game.camera.x = game.player.pos.x - halfWin
 
-proc logic(game: Game, tick: int) =
+proc logic(game: Game not nil, tick: int) =
   let time = addr game.player.time
   case game.map.getTile(game.player.pos)
   of start:
