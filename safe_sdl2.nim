@@ -29,7 +29,7 @@ proc safeInit*(flags: cint) {.inline.} =
   sdlInitialized = true
 
 proc safeCreateWindow*(title: cstring not nil; x, y, w, h: cint;
-                   flags: uint32): WindowPtr not nil {.inline.} =
+                       flags: uint32): WindowPtr not nil {.inline.} =
   doAssert sdlInitialized
   let ret = createWindow(title, x, y, w, h, flags)
   if ret.isNil:
