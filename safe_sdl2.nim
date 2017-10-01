@@ -3,36 +3,48 @@ import sdl2, sdl2.ttf, sdl2.image
 type
   SDLException = object of Exception
 
-proc safeGetError*: cstring {.inline.} =
-  result = getError()
-  doAssert result != nil
+proc safeGetError*: cstring not nil {.inline.} =
+  let ret = getError()
+  if ret.isNil:
+    doAssert false
+  else:
+    return ret
+
+template sdlFail(reason: string) =
+  raise SDLException.newException(
+    reason & ", SDL error: " & $safeGetError())
 
 template sdlFailIf(cond: typed, reason: string) =
-  if cond: raise SDLException.newException(
-    reason & ", SDL error: " & $safeGetError())
+  if cond: sdlFail(reason)
 
 proc safeInit*(flags: cint) {.inline.} =
   sdlFailIf(not sdl2.init(flags)):
     "SDL2 initialization failed"
 
 proc safeCreateWindow*(title: cstring; x, y, w, h: cint;
-                   flags: uint32): WindowPtr {.inline.} =
+                   flags: uint32): WindowPtr not nil {.inline.} =
   doAssert title != nil
-  result = createWindow(title, x, y, w, h, flags)
-  sdlFailIf result.isNil:
-    "Window could not be created"
+  let ret = createWindow(title, x, y, w, h, flags)
+  if ret.isNil:
+    sdlFail "Window could not be created"
+  else:
+    return ret    
 
-proc safeGetSurface*(window: WindowPtr): SurfacePtr {.inline.} =
+proc safeGetSurface*(window: WindowPtr): SurfacePtr not nil {.inline.} =
   doAssert window != nil
-  result = getSurface(window)
-  sdlFailIf result.isNil:
-    "Unable to get window surface"
+  let ret = getSurface(window)
+  if ret.isNil:
+    sdlFail "Unable to get window surface"
+  else:
+    return ret
 
-proc safeLoadBMP*(file: string): SurfacePtr {.inline.} =
+proc safeLoadBMP*(file: string): SurfacePtr not nil {.inline.} =
   doAssert file != nil
-  result = loadBMP(file)
-  sdlFailIf result.isNil:
-    "Unable to load BMP image " & file
+  let ret = loadBMP(file)
+  if ret.isNil:
+    sdlFail "Unable to load BMP image " & file
+  else:
+    return ret
 
 proc safeBlitSurface*(src: SurfacePtr; srcrect: ptr Rect; dst: SurfacePtr;
     dstrect: ptr Rect) {.inline.} =
@@ -78,10 +90,13 @@ proc safeSetHint*(name: cstring, value: cstring) {.inline.} =
   sdlFailIf(not setHint(name, value)):
     "Unable to set some hinting-related SDL2 options"
 
-proc safeCreateRenderer*(window: WindowPtr; index: cint; flags: cint): RendererPtr {.inline.} =
+proc safeCreateRenderer*(window: WindowPtr; index: cint; flags: cint): RendererPtr not nil {.inline.} =
   doAssert window != nil
-  result = createRenderer(window, index, flags)
-  sdlFailIf result.isNil: "Renderer could not be created"
+  let ret = createRenderer(window, index, flags)
+  if ret.isNil:
+    sdlFail "Renderer could not be created"
+  else:
+    return ret
 
 proc safeDestroy*(renderer: RendererPtr) {.inline.} =
   doAssert renderer != nil
@@ -126,22 +141,28 @@ proc safeSetFontOutline*(font: FontPtr, outline: cint) {.inline.} =
   doAssert outline >= 0
   setFontOutline(font, outline)
 
-proc safeRenderUtf8Blended*(font: FontPtr; text: cstring; fg: Color): SurfacePtr {.inline.} =
+proc safeRenderUtf8Blended*(font: FontPtr; text: cstring; fg: Color): SurfacePtr not nil {.inline.} =
   doAssert font != nil
   doAssert text != nil
-  result = renderUtf8Blended(font, text, fg)
-  sdlFailIf result.isNil: "Unable to render UTF8-blended text"
+  let ret = renderUtf8Blended(font, text, fg)
+  if ret.isNil:
+    sdlFail "Unable to render UTF8-blended text"
+  else:
+    return ret
 
 proc safeSetSurfaceAlphaMod*(surface: SurfacePtr; alpha: uint8) {.inline.} =
   doAssert surface != nil
   sdlFailIf(setSurfaceAlphaMod(surface, alpha) != 0):
     "Unable to set surface alpha"
 
-proc safeCreateTextureFromSurface*(renderer: RendererPtr; surface: SurfacePtr): TexturePtr {.inline.} =
+proc safeCreateTextureFromSurface*(renderer: RendererPtr; surface: SurfacePtr): TexturePtr not nil {.inline.} =
   doAssert renderer != nil
   doAssert surface != nil
-  result = createTextureFromSurface(renderer, surface)
-  sdlFailIf result.isNil: "Unable to render create texture from surface"
+  let ret = createTextureFromSurface(renderer, surface)
+  if ret.isNil:
+    sdlFail "Unable to render create texture from surface"
+  else:
+    return ret
 
 proc safeFreeSurface*(surface: SurfacePtr) {.inline.} =
   doAssert surface != nil
@@ -156,11 +177,14 @@ proc safeOpenFont*(file: cstring; ptsize: cint): FontPtr {.inline.} =
   result = openFont(file, ptsize)
   sdlFailIf result.isNil: "Failed to load font"
 
-proc safeLoadTexture*(renderer: RendererPtr; file: cstring): TexturePtr {.inline.} =
+proc safeLoadTexture*(renderer: RendererPtr; file: cstring): TexturePtr not nil {.inline.} =
   doAssert renderer != nil
   doAssert file != nil
-  result = loadTexture(renderer, file)
-  sdlFailIf result.isNil: "Failed to load texture"
+  let ret = loadTexture(renderer, file)
+  if ret.isNil:
+    sdlFail "Failed to load texture"
+  else:
+    return ret
 
 proc safeImageInit*(flags: cint = IMG_INIT_JPG or IMG_INIT_PNG) {.inline.} =
   sdlFailIf(image.init(flags) != flags):
@@ -175,27 +199,39 @@ proc safeTtfInit* {.inline.} =
 proc safeTtfQuit* {.inline.} =
   ttfQuit()
 
-proc safeRwFromFile*(file: cstring; mode: cstring): RWopsPtr {.inline.} =
+proc safeRwFromFile*(file: cstring; mode: cstring): RWopsPtr not nil {.inline.} =
   doAssert file != nil
   doAssert mode != nil
-  result = rwFromFile(file, mode)
-  sdlFailIf result.isNil: "Cannot create RWops from file"
+  let ret = rwFromFile(file, mode)
+  if ret.isNil:
+    sdlFail "Cannot create RWops from file"
+  else:
+    return ret
 
-proc safeOpenFontRW*(src: ptr RWops; freesrc: cint; ptsize: cint): FontPtr {.inline.} =
+proc safeOpenFontRW*(src: ptr RWops; freesrc: cint; ptsize: cint): FontPtr not nil {.inline.} =
   doAssert src != nil
   doAssert ptsize >= 1
-  result = openFontRW(src, freesrc, ptsize)
-  sdlFailIf result.isNil: "Unable to read font from file"
+  let ret = openFontRW(src, freesrc, ptsize)
+  if ret.isNil:
+    sdlFail "Unable to read font from file"
+  else:
+    return ret
 
-proc safeRwFromConstMem*(mem: pointer; size: cint): RWopsPtr {.inline.} =
+proc safeRwFromConstMem*(mem: pointer; size: cint): RWopsPtr not nil {.inline.} =
   doAssert mem != nil
   doAssert size >= 1
-  result = rwFromConstMem(mem, size)
-  sdlFailIf result.isNil: "Unable to read from const memory"
+  let ret = rwFromConstMem(mem, size)
+  if ret.isNil:
+    sdlFail "Unable to read from const memory"
+  else:
+    return ret
 
 proc safeLoadTexture_RW*(renderer: RendererPtr; src: RWopsPtr;
-                         freesrc: cint): TexturePtr {.inline.} =
+                         freesrc: cint): TexturePtr not nil {.inline.} =
   doAssert renderer != nil
   doAssert src != nil
-  result = loadTexture_RW(renderer, src, freesrc)
-  sdlFailIf result.isNil: "Unable to load a texture"
+  let ret = loadTexture_RW(renderer, src, freesrc)
+  if ret.isNil:
+    sdlFail "Unable to load a texture"
+  else:
+    return ret
