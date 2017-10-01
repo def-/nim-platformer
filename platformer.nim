@@ -100,7 +100,7 @@ proc newTextCache: TextCache =
 proc renderText(renderer: RendererPtr, font: FontPtr, text: string,
                 x, y, outline: cint, color: Color): CacheLine =
   font.safeSetFontOutline(outline)
-  let surface = font.safeRenderUtf8Blended(text.cstring, color)
+  var surface = font.safeRenderUtf8Blended(text.cstring, color)
 
   surface.safeSetSurfaceAlphaMod(color.a)
 
