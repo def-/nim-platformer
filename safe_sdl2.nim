@@ -199,6 +199,3 @@ proc safeLoadTexture_RW*(renderer: RendererPtr; src: RWopsPtr;
   doAssert src != nil
   result = loadTexture_RW(renderer, src, freesrc)
   sdlFailIf result.isNil: "Unable to load a texture"
-
-  # proc loadTexture_RW*(renderer: RendererPtr; src: RWopsPtr;
-  # freesrc: cint): TexturePtr {.importc: "IMG_LoadTexture_RW".}
