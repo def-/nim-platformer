@@ -70,15 +70,17 @@ proc safeUpdateSurface*(window: WindowPtr) {.inline.} =
   sdlFailIf(not updateSurface(window)):
     "Unable to update window surface"
 
-proc safeDestroy*(surface: SurfacePtr) {.inline.} =
+proc safeDestroy*(surface: var SurfacePtr) {.inline.} =
   doAssert sdlInitialized
   doAssert surface != nil
   destroy(surface)
+  surface = nil
 
-proc safeDestroy*(window: WindowPtr) {.inline.} =
+proc safeDestroy*(window: var WindowPtr) {.inline.} =
   doAssert sdlInitialized
   doAssert window != nil
   destroy(window)
+  window = nil
 
 proc safePollEvent*(event: var Event): Bool32 {.inline.} =
   doAssert sdlInitialized
@@ -120,10 +122,11 @@ proc safeCreateRenderer*(window: WindowPtr; index: cint; flags: cint): RendererP
   else:
     return ret
 
-proc safeDestroy*(renderer: RendererPtr) {.inline.} =
+proc safeDestroy*(renderer: var RendererPtr) {.inline.} =
   doAssert sdlInitialized
   doAssert renderer != nil
   destroy(renderer)
+  renderer = nil
 
 proc safeSetDrawColor*(renderer: RendererPtr; r, g, b: uint8, a = 255'u8) {.inline.} =
   doAssert sdlInitialized
@@ -200,10 +203,11 @@ proc safeFreeSurface*(surface: SurfacePtr) {.inline.} =
   doAssert surface != nil
   freeSurface(surface)
 
-proc safeDestroy*(texture: TexturePtr) {.inline.} =
+proc safeDestroy*(texture: var TexturePtr) {.inline.} =
   doAssert sdlInitialized
   doAssert texture != nil
   destroy texture
+  texture = nil
 
 proc safeOpenFont*(file: cstring; ptsize: cint): FontPtr {.inline.} =
   doAssert ttfInitIalized

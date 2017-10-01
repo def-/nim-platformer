@@ -393,12 +393,12 @@ proc main =
   safeTtfInit()
   defer: safeTtfQuit()
 
-  let window = safeCreateWindow(title = "Our own 2D platformer",
+  var window = safeCreateWindow(title = "Our own 2D platformer",
     x = SDL_WINDOWPOS_CENTERED, y = SDL_WINDOWPOS_CENTERED,
     w = windowSize.x, h = windowSize.y, flags = SDL_WINDOW_SHOWN)
   defer: window.safeDestroy()
 
-  let renderer = window.safeCreateRenderer(index = -1,
+  var renderer = window.safeCreateRenderer(index = -1,
     flags = Renderer_Accelerated or Renderer_PresentVsync)
   defer: renderer.safeDestroy()
 
