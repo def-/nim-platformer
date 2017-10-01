@@ -141,18 +141,18 @@ proc restartPlayer(player: Player) =
   player.time.begin = -1
   player.time.finish = -1
 
-proc newTime: Time =
+proc newTime: Time not nil =
   new result
   result.finish = -1
   result.best = -1
 
-proc newPlayer(texture: TexturePtr): Player =
+proc newPlayer(texture: TexturePtr): Player not nil =
   new result
   result.texture = texture
   result.time = newTime()
   result.restartPlayer()
 
-proc newMap(texture: TexturePtr, map: Stream): Map =
+proc newMap(texture: TexturePtr, map: Stream): Map not nil =
   new result
   result.texture = texture
   result.tiles = @[]
@@ -179,26 +179,26 @@ proc newMap(texture: TexturePtr, map: Stream): Map =
 const dataDir = "data"
 
 when defined(embedData):
-  template readRW(filename: string): ptr RWops =
+  template readRW(filename: string): ptr RWops not nil =
     const file = staticRead(dataDir / filename)
     safeRwFromConstMem(file.cstring, file.len)
 
-  template readStream(filename: string): Stream =
+  template readStream(filename: string): Stream not nil =
     const file = staticRead(dataDir / filename)
     newStringStream(file)
 else:
   let fullDataDir = getAppDir() / dataDir
 
-  template readRW(filename: string): ptr RWops =
+  template readRW(filename: string): ptr RWops not nil =
     safeRwFromFile(cstring(fullDataDir / filename), "r")
 
-  template readStream(filename: string): Stream =
+  template readStream(filename: string): Stream not nil=
     var stream = newFileStream(fullDataDir / filename)
     if stream.isNil: raise ValueError.newException(
       "Cannot open file stream:" & fullDataDir / filename)
     stream
 
-proc newGame(renderer: RendererPtr): Game =
+proc newGame(renderer: RendererPtr): Game not nil =
   new result
   result.renderer = renderer
 

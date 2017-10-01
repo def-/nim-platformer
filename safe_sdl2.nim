@@ -35,7 +35,7 @@ proc safeCreateWindow*(title: cstring not nil; x, y, w, h: cint;
   if ret.isNil:
     sdlFail "Window could not be created"
   else:
-    return ret    
+    return ret
 
 proc safeGetSurface*(window: WindowPtr): SurfacePtr not nil {.inline.} =
   doAssert sdlInitialized
