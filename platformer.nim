@@ -181,7 +181,7 @@ const dataDir = "data"
 when defined(embedData):
   template readRW(filename: string): ptr RWops =
     const file = staticRead(dataDir / filename)
-    rwFromConstMem(file.cstring, file.len)
+    safeRwFromConstMem(file.cstring, file.len)
 
   template readStream(filename: string): Stream =
     const file = staticRead(dataDir / filename)
