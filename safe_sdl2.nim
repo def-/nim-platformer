@@ -31,7 +31,6 @@ proc safeInit*(flags: cint) {.inline.} =
 proc safeCreateWindow*(title: cstring not nil; x, y, w, h: cint;
                    flags: uint32): WindowPtr not nil {.inline.} =
   doAssert sdlInitialized
-  doAssert title != nil
   let ret = createWindow(title, x, y, w, h, flags)
   if ret.isNil:
     sdlFail "Window could not be created"
@@ -49,7 +48,6 @@ proc safeGetSurface*(window: WindowPtr): SurfacePtr not nil {.inline.} =
 
 proc safeLoadBMP*(file: string not nil): SurfacePtr not nil {.inline.} =
   doAssert sdlInitialized
-  doAssert file != nil
   let ret = loadBMP(file)
   if ret.isNil:
     sdlFail "Unable to load BMP image " & file
@@ -108,8 +106,6 @@ proc safeDelay*(ms: uint32) {.inline.} =
 
 proc safeSetHint*(name: cstring not nil, value: cstring not nil) {.inline.} =
   doAssert sdlInitialized
-  doAssert name != nil
-  doAssert value != nil
   sdlFailIf(not setHint(name, value)):
     "Unable to set some hinting-related SDL2 options"
 
@@ -211,14 +207,12 @@ proc safeDestroy*(texture: var TexturePtr) {.inline.} =
 
 proc safeOpenFont*(file: cstring not nil; ptsize: cint): FontPtr {.inline.} =
   doAssert ttfInitIalized
-  doAssert file != nil
   result = openFont(file, ptsize)
   sdlFailIf result.isNil: "Failed to load font"
 
 proc safeLoadTexture*(renderer: RendererPtr; file: cstring not nil): TexturePtr not nil {.inline.} =
   doAssert sdlInitialized
   doAssert renderer != nil
-  doAssert file != nil
   let ret = loadTexture(renderer, file)
   if ret.isNil:
     sdlFail "Failed to load texture"
@@ -249,10 +243,9 @@ proc safeTtfQuit* {.inline.} =
   ttfQuit()
   ttfInitialized = false
 
-proc safeRwFromFile*(file: cstring; mode: cstring): RWopsPtr not nil {.inline.} =
+proc safeRwFromFile*(file: cstring; mode: cstring not nil): RWopsPtr not nil {.inline.} =
   doAssert sdlInitialized
-  doAssert file != nil
-  doAssert mode != nil
+  doassert file != nil
   let ret = rwFromFile(file, mode)
   if ret.isNil:
     sdlFail "Cannot create RWops from file"
@@ -271,7 +264,6 @@ proc safeOpenFontRW*(src: ptr RWops; freesrc: cint; ptsize: cint): FontPtr not n
 
 proc safeRwFromConstMem*(mem: pointer not nil; size: cint): RWopsPtr not nil {.inline.} =
   doAssert sdlInitIalized
-  doAssert mem != nil
   doAssert size >= 1
   let ret = rwFromConstMem(mem, size)
   if ret.isNil:
