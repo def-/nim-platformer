@@ -373,7 +373,7 @@ proc moveCamera(game: Game) =
     game.camera.x = game.player.pos.x - halfWin
 
 proc logic(game: Game, tick: int) =
-  template time: expr = game.player.time
+  let time = addr game.player.time
   case game.map.getTile(game.player.pos)
   of start:
     time.begin = tick
