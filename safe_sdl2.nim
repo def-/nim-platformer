@@ -105,6 +105,8 @@ proc safeSetHint*(name: cstring not nil, value: cstring not nil) {.inline.} =
 
 proc safeCreateRenderer*(window: WindowPtr not nil; index: cint; flags: cint): RendererPtr not nil {.inline.} =
   doAssert sdlInitialized
+  doAssert index >= -1
+  doAssert flags >= 0
   let ret = createRenderer(window, index, flags)
   if ret.isNil:
     sdlFail "Renderer could not be created"
