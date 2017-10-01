@@ -3,6 +3,11 @@ import sdl2, sdl2.ttf, sdl2.image
 type
   SDLException = object of Exception
 
+var
+  sdlInitialized, = false
+  imageInitialized = false
+  ttfInitIalized = false
+
 proc safeGetError*: cstring not nil {.inline.} =
   let ret = getError()
   if ret.isNil or ret == "":
@@ -18,11 +23,14 @@ template sdlFailIf(cond: typed, reason: string) =
   if cond: sdlFail(reason)
 
 proc safeInit*(flags: cint) {.inline.} =
+  doAssert(not sdlInitialized)
   sdlFailIf(not sdl2.init(flags)):
     "SDL2 initialization failed"
+  sdlInitialized = true
 
 proc safeCreateWindow*(title: cstring; x, y, w, h: cint;
                    flags: uint32): WindowPtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert title != nil
   let ret = createWindow(title, x, y, w, h, flags)
   if ret.isNil:
@@ -31,6 +39,7 @@ proc safeCreateWindow*(title: cstring; x, y, w, h: cint;
     return ret    
 
 proc safeGetSurface*(window: WindowPtr): SurfacePtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert window != nil
   let ret = getSurface(window)
   if ret.isNil:
@@ -39,6 +48,7 @@ proc safeGetSurface*(window: WindowPtr): SurfacePtr not nil {.inline.} =
     return ret
 
 proc safeLoadBMP*(file: string): SurfacePtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert file != nil
   let ret = loadBMP(file)
   if ret.isNil:
@@ -48,49 +58,61 @@ proc safeLoadBMP*(file: string): SurfacePtr not nil {.inline.} =
 
 proc safeBlitSurface*(src: SurfacePtr; srcrect: ptr Rect; dst: SurfacePtr;
     dstrect: ptr Rect) {.inline.} =
+  doAssert sdlInitialized
   doAssert src != nil
   doAssert dst != nil
   sdlFailIf(not blitSurface(src, nil, dst, nil)):
     "Unable to blit an image to a surface"
 
 proc safeUpdateSurface*(window: WindowPtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert window != nil
   sdlFailIf(not updateSurface(window)):
     "Unable to update window surface"
 
 proc safeDestroy*(surface: SurfacePtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert surface != nil
   destroy(surface)
 
 proc safeDestroy*(window: WindowPtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert window != nil
   destroy(window)
 
 proc safePollEvent*(event: var Event): Bool32 {.inline.} =
+  doAssert sdlInitialized
   return pollEvent(event)
 
 proc safeQuit*() {.inline.} =
+  doAssert sdlInitialized
   sdl2.quit()
+  sdlInitialized = false
 
 proc safeMapRGB* (format: ptr PixelFormat; r,g,b: uint8): uint32 {.inline.} =
+  doAssert sdlInitialized
   doAssert format != nil
   mapRGB(format, r, g, b)
 
 proc safeFillRect*(dst: SurfacePtr; rect: ptr Rect; color: uint32) {.inline.} =
+  doAssert sdlInitialized
   doAssert dst != nil
   sdlFailIf(not fillRect(dst, rect, color)):
     "Unable to fill a rectangular area of a surface"
 
 proc safeDelay*(ms: uint32) {.inline.} =
+  doAssert sdlInitialized
   delay(ms)
 
 proc safeSetHint*(name: cstring, value: cstring) {.inline.} =
+  doAssert sdlInitialized
   doAssert name != nil
   doAssert value != nil
   sdlFailIf(not setHint(name, value)):
     "Unable to set some hinting-related SDL2 options"
 
 proc safeCreateRenderer*(window: WindowPtr; index: cint; flags: cint): RendererPtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert window != nil
   let ret = createRenderer(window, index, flags)
   if ret.isNil:
@@ -99,26 +121,31 @@ proc safeCreateRenderer*(window: WindowPtr; index: cint; flags: cint): RendererP
     return ret
 
 proc safeDestroy*(renderer: RendererPtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   destroy(renderer)
 
 proc safeSetDrawColor*(renderer: RendererPtr; r, g, b: uint8, a = 255'u8) {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   sdlFailIf(not setDrawColor(renderer, r, g, b, a)):
     "Unable to set drawing color"
 
 proc safeClear*(renderer: RendererPtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   sdlFailIf(clear(renderer) != 0):
     "Unable to clear renderer"
 
 proc safePresent*(renderer: RendererPtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   present(renderer)
 
 proc safeCopyEx*(renderer: RendererPtr; texture: TexturePtr;
                  srcrect, dstrect: var Rect; angle: cdouble; center: ptr Point;
                  flip: RendererFlip = SDL_FLIP_NONE) {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   doAssert texture != nil
 
@@ -127,7 +154,7 @@ proc safeCopyEx*(renderer: RendererPtr; texture: TexturePtr;
 
 proc safeCopy*(renderer: RendererPtr; texture: TexturePtr;
                          srcrect, dstrect: ptr Rect) {.inline.} =
-
+  doAssert sdlInitialized
   doAssert renderer != nil
   doAssert texture != nil
   doAssert srcrect != nil
@@ -137,11 +164,13 @@ proc safeCopy*(renderer: RendererPtr; texture: TexturePtr;
     "Unable to copy texture data over to a renderer"
 
 proc safeSetFontOutline*(font: FontPtr, outline: cint) {.inline.} =
+  doAssert ttfInitIalized
   doAssert font != nil
   doAssert outline >= 0
   setFontOutline(font, outline)
 
 proc safeRenderUtf8Blended*(font: FontPtr; text: cstring; fg: Color): SurfacePtr not nil {.inline.} =
+  doAssert ttfInitIalized
   doAssert font != nil
   doAssert text != nil
   let ret = renderUtf8Blended(font, text, fg)
@@ -151,11 +180,13 @@ proc safeRenderUtf8Blended*(font: FontPtr; text: cstring; fg: Color): SurfacePtr
     return ret
 
 proc safeSetSurfaceAlphaMod*(surface: SurfacePtr; alpha: uint8) {.inline.} =
+  doAssert sdlInitialized
   doAssert surface != nil
   sdlFailIf(setSurfaceAlphaMod(surface, alpha) != 0):
     "Unable to set surface alpha"
 
 proc safeCreateTextureFromSurface*(renderer: RendererPtr; surface: SurfacePtr): TexturePtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   doAssert surface != nil
   let ret = createTextureFromSurface(renderer, surface)
@@ -165,19 +196,23 @@ proc safeCreateTextureFromSurface*(renderer: RendererPtr; surface: SurfacePtr): 
     return ret
 
 proc safeFreeSurface*(surface: SurfacePtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert surface != nil
   freeSurface(surface)
 
 proc safeDestroy*(texture: TexturePtr) {.inline.} =
+  doAssert sdlInitialized
   doAssert texture != nil
   destroy texture
 
 proc safeOpenFont*(file: cstring; ptsize: cint): FontPtr {.inline.} =
+  doAssert ttfInitIalized
   doAssert file != nil
   result = openFont(file, ptsize)
   sdlFailIf result.isNil: "Failed to load font"
 
 proc safeLoadTexture*(renderer: RendererPtr; file: cstring): TexturePtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert renderer != nil
   doAssert file != nil
   let ret = loadTexture(renderer, file)
@@ -187,19 +222,31 @@ proc safeLoadTexture*(renderer: RendererPtr; file: cstring): TexturePtr not nil 
     return ret
 
 proc safeImageInit*(flags: cint = IMG_INIT_JPG or IMG_INIT_PNG) {.inline.} =
+  doAssert sdlInitialized
+  doAssert(not imageInitialized)
   sdlFailIf(image.init(flags) != flags):
     "SDL2 Image initialization failed"
+  imageInitialized = true
 
 proc safeImageQuit* {.inline.} =
+  doAssert sdlInitialized
+  doAssert imageInitialized
   image.quit()
+  imageInitialized = false
 
 proc safeTtfInit* {.inline.} =
+  doAssert sdlInitialized
+  doAssert(not ttfInitialized)
   sdlFailIf(ttfInit() == SdlError): "SDL2 TTF initialization failed"
+  ttfInitialized = true
 
 proc safeTtfQuit* {.inline.} =
+  doAssert ttfInitialized
   ttfQuit()
+  ttfInitialized = false
 
 proc safeRwFromFile*(file: cstring; mode: cstring): RWopsPtr not nil {.inline.} =
+  doAssert sdlInitialized
   doAssert file != nil
   doAssert mode != nil
   let ret = rwFromFile(file, mode)
@@ -209,6 +256,7 @@ proc safeRwFromFile*(file: cstring; mode: cstring): RWopsPtr not nil {.inline.} 
     return ret
 
 proc safeOpenFontRW*(src: ptr RWops; freesrc: cint; ptsize: cint): FontPtr not nil {.inline.} =
+  doAssert ttfInitIalized
   doAssert src != nil
   doAssert ptsize >= 1
   let ret = openFontRW(src, freesrc, ptsize)
@@ -218,6 +266,7 @@ proc safeOpenFontRW*(src: ptr RWops; freesrc: cint; ptsize: cint): FontPtr not n
     return ret
 
 proc safeRwFromConstMem*(mem: pointer; size: cint): RWopsPtr not nil {.inline.} =
+  doAssert sdlInitIalized
   doAssert mem != nil
   doAssert size >= 1
   let ret = rwFromConstMem(mem, size)
@@ -228,6 +277,7 @@ proc safeRwFromConstMem*(mem: pointer; size: cint): RWopsPtr not nil {.inline.} 
 
 proc safeLoadTexture_RW*(renderer: RendererPtr; src: RWopsPtr;
                          freesrc: cint): TexturePtr not nil {.inline.} =
+  doAssert sdlInitIalized
   doAssert renderer != nil
   doAssert src != nil
   let ret = loadTexture_RW(renderer, src, freesrc)
