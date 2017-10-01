@@ -1,0 +1,273 @@
+import sdl2, sdl2.ttf, sdl2.image
+
+type
+  SDLException = object of Exception
+
+var
+  sdlInitialized, = false
+  imageInitialized = false
+  ttfInitIalized = false
+
+proc safeGetError*: cstring not nil {.inline.} =
+  let ret = getError()
+  if ret.isNil or ret == "":
+    raise SDLException.newException("Unable to get an SDL2 error!")
+  else:
+    return ret
+
+template sdlFail(reason: string not nil) =
+  raise SDLException.newException(
+    reason & ", SDL error: " & $safeGetError())
+
+template sdlFailIf(cond: typed, reason: string not nil) =
+  if cond: sdlFail(reason)
+
+proc safeInit*(flags: cint) {.inline.} =
+  doAssert(not sdlInitialized)
+  sdlFailIf(not sdl2.init(flags)):
+    "SDL2 initialization failed"
+  sdlInitialized = true
+
+proc safeCreateWindow*(title: cstring not nil; x, y, w, h: cint;
+                       flags: uint32): WindowPtr not nil {.inline.} =
+  doAssert sdlInitialized
+  let ret = createWindow(title, x, y, w, h, flags)
+  if ret.isNil:
+    sdlFail "Window could not be created"
+  else:
+    return ret
+
+proc safeGetSurface*(window: WindowPtr not nil): SurfacePtr not nil {.inline.} =
+  doAssert sdlInitialized
+  let ret = getSurface(window)
+  if ret.isNil:
+    sdlFail "Unable to get window surface"
+  else:
+    return ret
+
+proc safeLoadBMP*(file: string not nil): SurfacePtr not nil {.inline.} =
+  doAssert sdlInitialized
+  let ret = loadBMP(file)
+  if ret.isNil:
+    sdlFail "Unable to load BMP image " & file
+  else:
+    return ret
+
+proc safeBlitSurface*(src: SurfacePtr not nil; srcrect: ptr Rect; dst: SurfacePtr not nil;
+    dstrect: ptr Rect not nil) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(not blitSurface(src, nil, dst, nil)):
+    "Unable to blit an image to a surface"
+
+proc safeUpdateSurface*(window: WindowPtr not nil) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(not updateSurface(window)):
+    "Unable to update window surface"
+
+proc safeDestroy*(surface: var SurfacePtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert surface != nil
+  destroy(surface)
+  surface = nil
+
+proc safeDestroy*(window: var WindowPtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert window != nil
+  destroy(window)
+  window = nil
+
+proc safePollEvent*(event: var Event): Bool32 {.inline.} =
+  doAssert sdlInitialized
+  return pollEvent(event)
+
+proc safeQuit*() {.inline.} =
+  doAssert sdlInitialized
+  sdl2.quit()
+  sdlInitialized = false
+
+proc safeMapRGB* (format: ptr PixelFormat not nil; r,g,b: uint8): uint32 {.inline.} =
+  doAssert sdlInitialized
+  mapRGB(format, r, g, b)
+
+proc safeFillRect*(dst: SurfacePtr not nil; rect: ptr Rect not nil; color: uint32) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(not fillRect(dst, rect, color)):
+    "Unable to fill a rectangular area of a surface"
+
+proc safeDelay*(ms: uint32) {.inline.} =
+  doAssert sdlInitialized
+  delay(ms)
+
+proc safeSetHint*(name: cstring not nil, value: cstring not nil) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(not setHint(name, value)):
+    "Unable to set some hinting-related SDL2 options"
+
+proc safeCreateRenderer*(window: WindowPtr not nil; index: cint; flags: cint): RendererPtr not nil {.inline.} =
+  doAssert sdlInitialized
+  doAssert index >= -1
+  doAssert flags >= 0
+  let ret = createRenderer(window, index, flags)
+  if ret.isNil:
+    sdlFail "Renderer could not be created"
+  else:
+    return ret
+
+proc safeDestroy*(renderer: var RendererPtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  destroy(renderer)
+  renderer = nil
+
+proc safeSetDrawColor*(renderer: RendererPtr not nil; r, g, b: uint8, a = 255'u8) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(not setDrawColor(renderer, r, g, b, a)):
+    "Unable to set drawing color"
+
+proc safeClear*(renderer: RendererPtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  sdlFailIf(clear(renderer) != 0):
+    "Unable to clear renderer"
+
+proc safePresent*(renderer: RendererPtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  present(renderer)
+
+proc safeCopyEx*(renderer: RendererPtr; texture: TexturePtr;
+                 srcrect, dstrect: var Rect; angle: cdouble; center: ptr Point;
+                 flip: RendererFlip = SDL_FLIP_NONE) {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  doAssert texture != nil
+
+  sdlFailIf(not copyEx(renderer, texture, srcrect, dstrect, angle, center, flip)):
+    "Unable to copy texture data over to a renderer"
+
+proc safeCopy*(renderer: RendererPtr; texture: TexturePtr;
+                         srcrect, dstrect: ptr Rect not nil) {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  doAssert texture != nil
+  doAssert srcrect != nil
+  doAssert dstrect != nil
+
+  sdlFailIf(not sdl2.copy(renderer, texture, srcrect, dstrect)):
+    "Unable to copy texture data over to a renderer"
+
+proc safeSetFontOutline*(font: FontPtr, outline: cint) {.inline.} =
+  doAssert ttfInitIalized
+  doAssert font != nil
+  doAssert outline >= 0
+  setFontOutline(font, outline)
+
+proc safeRenderUtf8Blended*(font: FontPtr; text: cstring; fg: Color): SurfacePtr not nil {.inline.} =
+  doAssert ttfInitIalized
+  doAssert font != nil
+  doAssert text != nil
+  let ret = renderUtf8Blended(font, text, fg)
+  if ret.isNil:
+    sdlFail "Unable to render UTF8-blended text"
+  else:
+    return ret
+
+proc safeSetSurfaceAlphaMod*(surface: SurfacePtr not nil; alpha: uint8) {.inline.} =
+  doAssert sdlInitialized
+  sdlFailIf(setSurfaceAlphaMod(surface, alpha) != 0):
+    "Unable to set surface alpha"
+
+proc safeCreateTextureFromSurface*(renderer: RendererPtr; surface: SurfacePtr not nil): TexturePtr not nil {.inline.} =
+  doAssert sdlInitialized
+  doAssert renderer != nil
+  let ret = createTextureFromSurface(renderer, surface)
+  if ret.isNil:
+    sdlFail "Unable to render create texture from surface"
+  else:
+    return ret
+
+proc safeFreeSurface*(surface: var SurfacePtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert surface != nil
+  freeSurface(surface)
+  surface = nil
+
+proc safeDestroy*(texture: var TexturePtr) {.inline.} =
+  doAssert sdlInitialized
+  doAssert texture != nil
+  destroy texture
+  texture = nil
+
+proc safeOpenFont*(file: cstring not nil; ptsize: cint): FontPtr {.inline.} =
+  doAssert ttfInitIalized
+  result = openFont(file, ptsize)
+  sdlFailIf result.isNil: "Failed to load font"
+
+proc safeLoadTexture*(renderer: RendererPtr not nil; file: cstring not nil): TexturePtr not nil {.inline.} =
+  doAssert sdlInitialized
+  let ret = loadTexture(renderer, file)
+  if ret.isNil:
+    sdlFail "Failed to load texture"
+  else:
+    return ret
+
+proc safeImageInit*(flags: cint = IMG_INIT_JPG or IMG_INIT_PNG) {.inline.} =
+  doAssert sdlInitialized
+  doAssert(not imageInitialized)
+  sdlFailIf(image.init(flags) != flags):
+    "SDL2 Image initialization failed"
+  imageInitialized = true
+
+proc safeImageQuit* {.inline.} =
+  doAssert sdlInitialized
+  doAssert imageInitialized
+  image.quit()
+  imageInitialized = false
+
+proc safeTtfInit* {.inline.} =
+  doAssert sdlInitialized
+  doAssert(not ttfInitialized)
+  sdlFailIf(ttfInit() == SdlError): "SDL2 TTF initialization failed"
+  ttfInitialized = true
+
+proc safeTtfQuit* {.inline.} =
+  doAssert ttfInitialized
+  ttfQuit()
+  ttfInitialized = false
+
+proc safeRwFromFile*(file: cstring; mode: cstring not nil): RWopsPtr not nil {.inline.} =
+  doAssert sdlInitialized
+  doassert file != nil
+  let ret = rwFromFile(file, mode)
+  if ret.isNil:
+    sdlFail "Cannot create RWops from file"
+  else:
+    return ret
+
+proc safeOpenFontRW*(src: ptr RWops not nil; freesrc: cint; ptsize: cint): FontPtr not nil {.inline.} =
+  doAssert ttfInitIalized
+  doAssert ptsize >= 1
+  let ret = openFontRW(src, freesrc, ptsize)
+  if ret.isNil:
+    sdlFail "Unable to read font from file"
+  else:
+    return ret
+
+proc safeRwFromConstMem*(mem: pointer not nil; size: cint): RWopsPtr not nil {.inline.} =
+  doAssert sdlInitIalized
+  doAssert size >= 1
+  let ret = rwFromConstMem(mem, size)
+  if ret.isNil:
+    sdlFail "Unable to read from const memory"
+  else:
+    return ret
+
+proc safeLoadTexture_RW*(renderer: RendererPtr; src: RWopsPtr not nil;
+                         freesrc: cint): TexturePtr not nil {.inline.} =
+  doAssert sdlInitIalized
+  doAssert renderer != nil
+  let ret = loadTexture_RW(renderer, src, freesrc)
+  if ret.isNil:
+    sdlFail "Unable to load a texture"
+  else:
+    return ret
