@@ -1,6 +1,6 @@
 # https://hookrace.net/blog/writing-a-2d-platform-game-in-nim-with-sdl2/#4.-tile-map
 
-import sdl2, sdl2.image, basic2d, strutils
+import sdl2, sdl2/image, basic2d, strutils
 
 type
   SDLException = object of Exception

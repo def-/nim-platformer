@@ -1,6 +1,6 @@
 # https://hookrace.net/blog/writing-a-2d-platform-game-in-nim-with-sdl2/#7.-game-state
 
-import sdl2, sdl2.image, basic2d, strutils, times, math, strfmt
+import sdl2, sdl2/image, basic2d, strutils, times, math, strfmt
 
 type
   SDLException = object of Exception
@@ -274,7 +274,7 @@ proc formatTime(ticks: int): string =
   interp"${mins:02}:${secs:02}:${cents:02}"
 
 proc logic(game: Game, tick: int) =
-  template time: expr = game.player.time
+  template time: untyped = game.player.time
   case game.map.getTile(game.player.pos)
   of start:
     time.begin = tick

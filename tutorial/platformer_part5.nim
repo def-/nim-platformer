@@ -1,6 +1,6 @@
 # https://hookrace.net/blog/writing-a-2d-platform-game-in-nim-with-sdl2/#5.-physics-and-collisions
 
-import sdl2, sdl2.image, basic2d, strutils, times, math
+import sdl2, sdl2/image, basic2d, strutils, times, math
 
 type
   SDLException = object of Exception
