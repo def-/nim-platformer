@@ -1,5 +1,5 @@
 import
-  sdl2, sdl2.image, sdl2.ttf,
+  sdl2, sdl2/image, sdl2/ttf,
   basic2d, strutils, times, math, strfmt, os, streams
 
 type
@@ -373,7 +373,7 @@ proc moveCamera(game: Game) =
     game.camera.x = game.player.pos.x - halfWin
 
 proc logic(game: Game, tick: int) =
-  template time: expr = game.player.time
+  template time: untyped = game.player.time
   case game.map.getTile(game.player.pos)
   of start:
     time.begin = tick
